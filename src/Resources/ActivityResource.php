@@ -31,6 +31,11 @@ class ActivityResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-list';
 
+    public static function getNavigationSort(): int
+    {
+        return config('filament-logger.navigation_sort') ?? 1 ;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -133,7 +138,7 @@ class ActivityResource extends Resource
                 TextColumn::make('description')
             ->label(__('filament-logger::filament-logger.resource.label.description'))
                     ->toggleable()
-                    ->toggledHiddenByDefault()
+                    ->toggledHiddenByDefault(false)
                     ->wrap(),
 
                 TextColumn::make('subject_type')
