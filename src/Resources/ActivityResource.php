@@ -20,8 +20,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Spatie\Activitylog\Contracts\Activity;
 use Spatie\Activitylog\ActivitylogServiceProvider;
+use Spatie\Activitylog\Contracts\Activity;
 use Z3d0X\FilamentLogger\Resources\ActivityResource\Pages;
 
 class ActivityResource extends Resource
@@ -33,7 +33,7 @@ class ActivityResource extends Resource
 
     public static function getNavigationSort(): int
     {
-        return config('filament-logger.navigation_sort') ?? 1 ;
+        return config('filament-logger.navigation_sort') ?? 1;
     }
 
     public static function form(Form $form): Form
@@ -52,7 +52,7 @@ class ActivityResource extends Resource
                         TextInput::make('subject_type')
                             ->afterStateHydrated(function ($component, ?Model $record, $state) {
                                 /** @var Activity $record */
-                                return $state ? $component->state(Str::of($state)->afterLast('\\')->headline().' # '.$record->subject_id) : '-';
+                                return $state ? $component->state(Str::of($state)->afterLast('\\')->headline() . ' # ' . $record->subject_id) : '-';
                             })
                             ->label(__('filament-logger::filament-logger.resource.label.subject')),
 
@@ -61,9 +61,9 @@ class ActivityResource extends Resource
                             ->rows(2)
                             ->columnSpan(2),
                     ])
-                    ->columns(2),
+                        ->columns(2),
                 ])
-                ->columnSpan(['sm' => 3]),
+                    ->columnSpan(['sm' => 3]),
 
                 Group::make([
                     Card::make([
@@ -91,7 +91,7 @@ class ActivityResource extends Resource
                 ]),
                 Card::make()
                     ->columns()
-                    ->visible(fn ($record) => $record->properties?->count() > 0)
+                    ->visible(fn($record) => $record->properties?->count() > 0)
                     ->schema(function (?Activity $record) {
                         $properties = $record->properties->except(['attributes', 'old']);
 
@@ -105,13 +105,13 @@ class ActivityResource extends Resource
 
                         if ($old = $record->properties->get('old')) {
                             $schema[] = KeyValue::make('old')
-                                ->afterStateHydrated(fn (KeyValue $component) => $component->state($old))
+                                ->afterStateHydrated(fn(KeyValue $component) => $component->state($old))
                                 ->label(__('filament-logger::filament-logger.resource.label.old'));
                         }
 
                         if ($attributes = $record->properties->get('attributes')) {
                             $schema[] = KeyValue::make('attributes')
-                                ->afterStateHydrated(fn (KeyValue $component) => $component->state($attributes))
+                                ->afterStateHydrated(fn(KeyValue $component) => $component->state($attributes))
                                 ->label(__('filament-logger::filament-logger.resource.label.new'));
                         }
 
@@ -128,35 +128,63 @@ class ActivityResource extends Resource
                 BadgeColumn::make('log_name')
                     ->colors(static::getLogNameColors())
                     ->label(__('filament-logger::filament-logger.resource.label.type'))
-                    ->formatStateUsing(fn ($state) => ucwords($state))
+                    ->formatStateUsing(fn($state) => ucwords($state))
                     ->sortable(),
 
-            TextColumn::make('event')
-                ->label(__('filament-logger::filament-logger.resource.label.event'))
+                TextColumn::make('event')
+                    ->label(__('filament-logger::filament-logger.resource.label.event'))
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono')
                     ->sortable(),
 
                 TextColumn::make('description')
-            ->label(__('filament-logger::filament-logger.resource.label.description'))
+                    ->label(__('filament-logger::filament-logger.resource.label.description'))
                     ->toggleable()
-                    ->toggledHiddenByDefault(false)
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono')
                     ->wrap(),
 
                 TextColumn::make('subject_type')
                     ->label(__('filament-logger::filament-logger.resource.label.subject'))
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono')
                     ->formatStateUsing(function ($state, Model $record) {
                         /** @var Activity $record */
                         if (!$state) {
                             return '-';
                         }
-                        return Str::of($state)->afterLast('\\')->headline().' # '.$record->subject_id;
+                        return Str::of($state)->afterLast('\\')->headline() . ' # ' . $record->subject_id;
                     }),
 
                 TextColumn::make('causer.name')
-                    ->label(__('filament-logger::filament-logger.resource.label.user')),
+                    ->label(__('filament-logger::filament-logger.resource.label.user'))
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono'),
+
+                TextColumn::make('updated_at')
+                    ->label('UPDATED')
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono')
+                    ->formatStateUsing(fn($record): string => @$record?->updated_at->diffForHumans(['short' => true]))
+                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label(__('filament-logger::filament-logger.resource.label.logged_at'))
                     ->dateTime(config('filament-logger.datetime_format', 'd/m/Y H:i:s'))
+                    ->wrap()
+                    ->size('sm')
+                    ->weight('bold')
+                    ->fontFamily('mono')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
@@ -171,46 +199,46 @@ class ActivityResource extends Resource
                     ->options(static::getSubjectTypeList()),
 
                 Filter::make('properties->old')
-					->indicateUsing(function (array $data): ?string {
-						if (!$data['old']) {
-							return null;
-						}
+                    ->indicateUsing(function (array $data): ?string {
+                        if (!$data['old']) {
+                            return null;
+                        }
 
-						return __('filament-logger::filament-logger.resource.label.old_attributes') . $data['old'];
-					})
-					->form([
-						TextInput::make('old')
+                        return __('filament-logger::filament-logger.resource.label.old_attributes') . $data['old'];
+                    })
+                    ->form([
+                        TextInput::make('old')
                             ->label(__('filament-logger::filament-logger.resource.label.old'))
                             ->hint(__('filament-logger::filament-logger.resource.label.properties_hint')),
-					])
-					->query(function (Builder $query, array $data): Builder {
-						if (!$data['old']) {
-							return $query;
-						}
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (!$data['old']) {
+                            return $query;
+                        }
 
-						return $query->where('properties->old', 'like', "%{$data['old']}%");
-					}),
+                        return $query->where('properties->old', 'like', "%{$data['old']}%");
+                    }),
 
-				Filter::make('properties->attributes')
-					->indicateUsing(function (array $data): ?string {
-						if (!$data['new']) {
-							return null;
-						}
+                Filter::make('properties->attributes')
+                    ->indicateUsing(function (array $data): ?string {
+                        if (!$data['new']) {
+                            return null;
+                        }
 
-						return __('filament-logger::filament-logger.resource.label.new_attributes') . $data['new'];
-					})
-					->form([
-						TextInput::make('new')
+                        return __('filament-logger::filament-logger.resource.label.new_attributes') . $data['new'];
+                    })
+                    ->form([
+                        TextInput::make('new')
                             ->label(__('filament-logger::filament-logger.resource.label.new'))
                             ->hint(__('filament-logger::filament-logger.resource.label.properties_hint')),
-					])
-					->query(function (Builder $query, array $data): Builder {
-						if (!$data['new']) {
-							return $query;
-						}
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (!$data['new']) {
+                            return $query;
+                        }
 
-						return $query->where('properties->attributes', 'like', "%{$data['new']}%");
-					}),
+                        return $query->where('properties->attributes', 'like', "%{$data['new']}%");
+                    }),
 
                 Filter::make('created_at')
                     ->form([
@@ -222,40 +250,37 @@ class ActivityResource extends Resource
                         return $query
                             ->when(
                                 $data['logged_at'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', $date),
                             );
                     }),
             ]);
     }
 
-    public static function getPages(): array
+    protected static function getLogNameColors(): array
     {
-        return [
-            'index' => Pages\ListActivities::route('/'),
-            'view' => Pages\ViewActivity::route('/{record}'),
-        ];
-    }
+        $customs = [];
 
-    public static function getModel(): string
-    {
-        return ActivitylogServiceProvider::determineActivityModel();
-    }
-
-    protected static function getSubjectTypeList(): array
-    {
-        if (config('filament-logger.resources.enabled', true)) {
-            $subjects = [];
-            $exceptResources = [...config('filament-logger.resources.exclude'), config('filament-logger.activity_resource')];
-            $removedExcludedResources = collect(Filament::getResources())->filter(function ($resource) use ($exceptResources) {
-                return ! in_array($resource, $exceptResources);
-            });
-            foreach ($removedExcludedResources as $resource) {
-                $model = $resource::getModel();
-                $subjects[$model] = Str::of(class_basename($model))->headline();
+        foreach (config('filament-logger.custom') ?? [] as $custom) {
+            if (filled($custom['color'] ?? null)) {
+                $customs[$custom['color']] = $custom['log_name'];
             }
-            return $subjects;
         }
-        return [];
+
+        return array_merge(
+            (config('filament-logger.resources.enabled') && config('filament-logger.resources.color')) ? [
+                config('filament-logger.resources.color') => config('filament-logger.resources.log_name'),
+            ] : [],
+            (config('filament-logger.models.enabled') && config('filament-logger.models.color')) ? [
+                config('filament-logger.models.color') => config('filament-logger.models.log_name'),
+            ] : [],
+            (config('filament-logger.access.enabled') && config('filament-logger.access.color')) ? [
+                config('filament-logger.access.color') => config('filament-logger.access.log_name'),
+            ] : [],
+            (config('filament-logger.notifications.enabled') && config('filament-logger.notifications.color')) ? [
+                config('filament-logger.notifications.color') => config('filament-logger.notifications.log_name'),
+            ] : [],
+            $customs,
+        );
     }
 
     protected static function getLogNameList(): array
@@ -283,31 +308,34 @@ class ActivityResource extends Resource
         );
     }
 
-    protected static function getLogNameColors(): array
+    protected static function getSubjectTypeList(): array
     {
-        $customs = [];
-
-        foreach (config('filament-logger.custom') ?? [] as $custom) {
-            if (filled($custom['color'] ?? null)) {
-                $customs[$custom['color']] = $custom['log_name'];
+        if (config('filament-logger.resources.enabled', true)) {
+            $subjects = [];
+            $exceptResources = [...config('filament-logger.resources.exclude'), config('filament-logger.activity_resource')];
+            $removedExcludedResources = collect(Filament::getResources())->filter(function ($resource) use ($exceptResources) {
+                return !in_array($resource, $exceptResources);
+            });
+            foreach ($removedExcludedResources as $resource) {
+                $model = $resource::getModel();
+                $subjects[$model] = Str::of(class_basename($model))->headline();
             }
+            return $subjects;
         }
+        return [];
+    }
 
-        return array_merge(
-            (config('filament-logger.resources.enabled') && config('filament-logger.resources.color')) ? [
-                config('filament-logger.resources.color') => config('filament-logger.resources.log_name'),
-            ] : [],
-            (config('filament-logger.models.enabled') && config('filament-logger.models.color')) ? [
-                config('filament-logger.models.color') => config('filament-logger.models.log_name'),
-            ] : [],
-            (config('filament-logger.access.enabled') && config('filament-logger.access.color')) ? [
-                config('filament-logger.access.color') => config('filament-logger.access.log_name'),
-            ] : [],
-            (config('filament-logger.notifications.enabled') &&  config('filament-logger.notifications.color')) ? [
-                config('filament-logger.notifications.color') => config('filament-logger.notifications.log_name'),
-            ] : [],
-            $customs,
-        );
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListActivities::route('/'),
+            'view' => Pages\ViewActivity::route('/{record}'),
+        ];
+    }
+
+    public static function getModel(): string
+    {
+        return ActivitylogServiceProvider::determineActivityModel();
     }
 
     public static function getLabel(): string
